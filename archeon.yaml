@@ -1,0 +1,11 @@
+name: archeon
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - streamlit
+  - pip
+  - pip:
+    - pyrebase4
+    - pycryptodome

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>3D Gaussian Splat Viewer Examples</title>
+  <style>
+    :root {
+      --primary-color: #4a00e0;
+      --primary-light: #7028e4;
+      --secondary-color: #1a1a2e;
+      --text-color: #ffffff;
+      --accent-color: #8a8aff;
+      --border-radius: 8px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    body {
+      background-color: #0d0d1a;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--text-color);
+    }
+
+    .container {
+      display: flex;
+      max-width: 1000px;
+      width: 95%;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .panel {
+      background-color: #101029;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 25px;
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--accent-color);
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
+
+    .file-ext {
+      background-color: var(--primary-color);
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: white;
+      font-weight: 500;
+    }
+
+    .form-row {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-row label {
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .text-input {
+      padding: 8px 12px;
+      border: 1px solid #29293d;
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: rgba(74, 0, 224, 0.2);
+      color: #ffffff;
+      transition: border 0.2s;
+    }
+
+    .text-input:focus {
+      border-color: var(--primary-light);
+      outline: none;
+    }
+
+    .valid-value-label {
+      color: #888;
+      font-size: 13px;
+      margin-left: 8px;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .checkbox-input {
+      margin-right: 10px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-color);
+    }
+
+    .button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+      margin-right: 10px;
+    }
+
+    .button:hover {
+      background-color: var(--primary-light);
+    }
+
+    .button.secondary {
+      background-color: #707090;
+      color: #ddd;
+    }
+
+    .button.secondary:hover {
+      background-color: #565680;
+    }
+
+    .controls-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .controls-list li {
+      margin-bottom: 8px;
+    }
+
+    .controls-key {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 4px;
+      min-width: 20px;
+      text-align: center;
+      margin-right: 10px;
+      box-shadow: 0 2px 3px rgba(0,0,0,0.05);
+    }
+
+    .controls-table {
+      width: 100%;
+    }
+
+    .controls-table td {
+      padding: 8px 0;
+      vertical-align: middle;
+    }
+
+    .controls-table tr:not(:last-child) td {
+      border-bottom: 1px solid #41416e;
+    }
+
+    .controls-section {
+      margin-bottom: 20px;
+    }
+
+    .controls-subtitle {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--accent-color);
+    }
+
+    #viewStatus, #viewError {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    #viewError {
+      color: #e74c3c;
+    }
+
+    .file-input-container {
+      position: relative;
+      margin-bottom: 15px;
+    }
+
+    .file-label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .loading-icon {
+      display: none;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(74, 0, 224, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+    }
+  </style>
+  <script type="importmap">
+    {
+        "imports": {
+            "three": "./lib/three.module.js",
+            "gaussian-splats-3d": "./lib/gaussian-splats-3d.module.js"
+        }
+    }
+  </script>
+  <script>
+    let currentAlphaRemovalThreshold;
+    let currentCameraUpArray;
+    let currentCameraPositionArray;
+    let currentCameraLookAtArray;
+    let currentAntialiased;
+    let current2DScene;
+    let currentSphericalHarmonicsDegree;
+  </script>
+  <script type="module">
+    import * as GaussianSplats3D from 'gaussian-splats-3d';
+    import * as THREE from 'three';
+
+    function fileBufferToSplatBuffer(fileBufferData, format, alphaRemovalThreshold, compressionLevel, sectionSize, sceneCenter, blockSize, bucketSize, outSphericalHarmonicsDegree = 0) {
+      if (format === GaussianSplats3D.SceneFormat.Ply) {
+        return GaussianSplats3D.PlyLoader.loadFromFileData(fileBufferData.data, alphaRemovalThreshold, compressionLevel, true, outSphericalHarmonicsDegree, sectionSize, sceneCenter, blockSize, bucketSize);
+      } else {
+        if (format === GaussianSplats3D.SceneFormat.Splat) {
+          return GaussianSplats3D.SplatLoader.loadFromFileData(fileBufferData.data, alphaRemovalThreshold, compressionLevel, true, sectionSize, sceneCenter, blockSize, bucketSize);
+        } else {
+          return GaussianSplats3D.KSplatLoader.loadFromFileData(fileBufferData.data);
+        }
+      }
+    }
+
+    window.onCompressionLevelChange = function(arg) {
+      const compressionLevel = parseInt(document.getElementById("compressionLevel").value);
+      if (isNaN(compressionLevel) || compressionLevel < 0 || compressionLevel > 2) {
+        return;
+      }
+
+      for (let i = 1; i <= 3; i++) {
+        const element = document.getElementById('advancedCompressionRow' + i);
+        if (compressionLevel === 0) {
+          element.style.display = 'none';
+        } else {
+          element.style.display = '';
+        }
+      }
+    }
+
+    window.onFileChange = function(arg, fileNameLabelID) {
+      const fileNameLabel = document.getElementById(fileNameLabelID);
+      const url = arg.value;
+      let lastForwardSlash = url.lastIndexOf('/');
+      let lastBackwardSlash = url.lastIndexOf('\\');
+      const lastSlash = Math.max(lastForwardSlash, lastBackwardSlash);
+      fileNameLabel.innerHTML = url.substring(lastSlash + 1);
+    }
+
+    let conversionInProgress = false;
+    window.convertPlyFile = function() {
+      if (conversionInProgress) return;
+      const conversionFile = document.getElementById("conversionFile");
+      const compressionLevel = parseInt(document.getElementById("compressionLevel").value);
+      const alphaRemovalThreshold = parseInt(document.getElementById("alphaRemovalThreshold").value);
+      const sphericalHarmonicsDegree = parseInt(document.getElementById("conversionSphericalHarmonicsDegree").value);
+      const sectionSize = 0;
+      let sceneCenterArray = document.getElementById("sceneCenter").value;
+      const blockSize = parseFloat(document.getElementById("blockSize").value);
+      const bucketSize = parseInt(document.getElementById("bucketSize").value);
+
+      sceneCenterArray = sceneCenterArray.split(',');
+  
+      if (sceneCenterArray.length !== 3) {
+        setViewError("Scene center must contain 3 elements.");
+        return;
+      }
+
+      for (let i = 0; i < 3; i++) {
+        sceneCenterArray[i] = parseFloat(sceneCenterArray[i]);
+
+        if (isNaN(sceneCenterArray[i])) {
+          setViewError("Invalid scene center.");
+          return;
+        }
+      }
+  
+      const sceneCenter = new THREE.Vector3().fromArray(sceneCenterArray);
+
+      if (isNaN(compressionLevel) || compressionLevel < 0 || compressionLevel > 2) {
+        setConversionError("Invalid compression level.");
+        return;
+      } else if (isNaN(alphaRemovalThreshold) || alphaRemovalThreshold <0 || alphaRemovalThreshold > 255) {
+        setConversionError("Invalid alpha remval threshold.");
+        return;
+      } else if (isNaN(sphericalHarmonicsDegree) || sphericalHarmonicsDegree < 0 || sphericalHarmonicsDegree > 2) {
+        setConversionError("Invalid SH degree.");
+        return;
+      } else if (isNaN(blockSize) || blockSize < 0.1) {
+        setConversionError("Invalid block size.");
+        return;
+      } else if (isNaN(bucketSize) || bucketSize < 2 || bucketSize > 65536) {
+        setConversionError("Invalid bucket size.");
+        return;
+      } else if (!conversionFile.files[0]) {
+        setConversionError("Please choose a file to convert.");
+        return;
+      }
+
+      setConversionError("");
+      const convertButton = document.getElementById("convertButton");
+
+      const conversionDone = (error) => {
+        if (error) {
+          console.error(error);
+          setConversionError("Could not convert file.");
+        } else {
+          setConversionStatus("Conversion complete!");
+          setConversionLoadingIconVisibility(false);
+          setConversionCheckIconVisibility(true);
+        }
+        convertButton.disabled = false;
+        conversionInProgress = false;
+      }
+
+      try {
+        const fileReader = new FileReader();
+        fileReader.onload = function(){
+          convertButton.disabled = true;
+          setConversionStatus("Parsing file...");
+          setConversionLoadingIconVisibility(true);
+          setConversionCheckIconVisibility(false);
+          const conversionFileName = conversionFile.files[0].name.trim();
+          const format = GaussianSplats3D.LoaderUtils.sceneFormatFromPath(conversionFileName);
+          const fileData = {data: fileReader.result};
+          window.setTimeout(() => {
+            try {
+              const splatBufferPromise = fileBufferToSplatBuffer(fileData, format, alphaRemovalThreshold, compressionLevel,
+                                                                 sectionSize, sceneCenter, blockSize, bucketSize, sphericalHarmonicsDegree);
+              splatBufferPromise.then((splatBuffer) => {
+                GaussianSplats3D.KSplatLoader.downloadFile(splatBuffer, 'converted_file.ksplat');
+                conversionDone();
+              });
+            } catch (e) {
+              conversionDone(e);
+            }
+          }, 100);
+        }
+        conversionInProgress = true;
+        setConversionStatus("Loading file...");
+        setConversionLoadingIconVisibility(true);
+        fileReader.readAsArrayBuffer(conversionFile.files[0]);
+      } catch (e) {
+        conversionDone(e);
+      }
+    }
+
+    function setConversionError(msg) {
+      setConversionLoadingIconVisibility(false);
+      setConversionCheckIconVisibility(false);
+      document.getElementById("conversionStatus").innerHTML = "";
+      document.getElementById("conversionError").innerHTML = msg;
+    }
+
+    function setConversionStatus(msg) {
+      document.getElementById("conversionError").innerHTML = "";
+      document.getElementById("conversionStatus").innerHTML = msg;
+    }
+
+    function setConversionLoadingIconVisibility(visible) {
+      document.getElementById('conversion-loading-icon').style.display = visible ? 'block' : 'none';
+    }
+
+    function setConversionCheckIconVisibility(visible) {
+      document.getElementById('check-icon').style.display = visible ? 'block' : 'none';
+    }
+
+    window.viewSplat = function() {
+
+      const viewFile = document.getElementById("viewFile");
+      const alphaRemovalThreshold = parseInt(document.getElementById("alphaRemovalThresholdView").value);
+
+      let cameraUpArray = document.getElementById("cameraUp").value;
+      let cameraPositionArray = document.getElementById("cameraPosition").value;
+      let cameraLookAtArray = document.getElementById("cameraLookAt").value;
+      let antialiased = document.getElementById("antialiased").checked;
+      let sceneIs2D = document.getElementById("2dScene").checked;
+      let sphericalHarmonicsDegree = parseInt(document.getElementById("viewSphericalHarmonicsDegree").value);
+
+      cameraUpArray = cameraUpArray.split(',');
+      cameraPositionArray = cameraPositionArray.split(',');
+      cameraLookAtArray = cameraLookAtArray.split(',');
+
+      if (!viewFile.files[0]) {
+        setViewError("Please choose a file to view.");
+        return;
+      } else if (isNaN(alphaRemovalThreshold) || alphaRemovalThreshold < 0 || alphaRemovalThreshold > 255) {
+        setViewError("Invalid alpha remval threshold.");
+        return;
+      } else if (isNaN(sphericalHarmonicsDegree) || sphericalHarmonicsDegree < 0 || sphericalHarmonicsDegree > 2) {
+        setViewError("Invalid SH degree.");
+        return;
+      }
+
+      if (cameraUpArray.length !== 3) {
+        setViewError("Camera up must contain 3 elements.");
+        return;
+      }
+
+      if (cameraPositionArray.length !== 3) {
+        setViewError("Camera position must contain 3 elements.");
+        return;
+      }
+
+      if (cameraLookAtArray.length !== 3) {
+        setViewError("Camera look-at must contain 3 elements.");
+        return;
+      }
+
+      for (let i = 0; i < 3; i++) {
+        cameraUpArray[i] = parseFloat(cameraUpArray[i]);
+        cameraPositionArray[i] = parseFloat(cameraPositionArray[i]);
+        cameraLookAtArray[i] = parseFloat(cameraLookAtArray[i]);
+
+        if (isNaN(cameraUpArray[i])) {
+          setViewError("Invalid camera up.");
+          return;
+        }
+
+        if (isNaN(cameraPositionArray[i])) {
+          setViewError("Invalid camera position.");
+          return;
+        }
+
+        if (isNaN(cameraLookAtArray[i])) {
+          setViewError("Invalid camera look-at.");
+          return;
+        }
+      }
+
+      const viewFileName = viewFile.files[0].name.trim();
+      const format = GaussianSplats3D.LoaderUtils.sceneFormatFromPath(viewFileName);
+
+      currentAlphaRemovalThreshold = alphaRemovalThreshold;
+      currentCameraUpArray = cameraUpArray;
+      currentCameraPositionArray = cameraPositionArray;
+      currentCameraLookAtArray = cameraLookAtArray;
+      currentAntialiased = antialiased;
+      current2DScene = sceneIs2D;
+      currentSphericalHarmonicsDegree = sphericalHarmonicsDegree;
+
+      try {
+        const fileReader = new FileReader();
+        fileReader.onload = function(){
+          try {
+           runViewer(fileReader.result, format, alphaRemovalThreshold, cameraUpArray, cameraPositionArray, cameraLookAtArray, antialiased, sceneIs2D, sphericalHarmonicsDegree);
+          } catch (e) {
+            console.error(e);
+            setViewError("Could not view scene.");
+          }
+        }
+        setViewStatus("Loading scene...");
+        fileReader.readAsArrayBuffer(viewFile.files[0]);
+      } catch (e) {
+        console.error(e);
+        setViewError("Could not view scene.");
+      }
+    }
+
+    function setViewError(msg) {
+      setViewLoadingIconVisibility(false);
+      document.getElementById("viewStatus").innerHTML = "";
+      document.getElementById("viewError").innerHTML = msg;
+    }
+
+    function setViewStatus(msg) {
+      setViewLoadingIconVisibility(true);
+      document.getElementById("viewError").innerHTML = "";
+      document.getElementById("viewStatus").innerHTML = msg;
+    }
+
+    function setViewLoadingIconVisibility(visible) {
+      document.getElementById('view-loading-icon').style.display = visible ? 'block' : 'none';
+    }
+  
+    window.addEventListener("popstate", (event) => {
+      if (currentAlphaRemovalThreshold !== undefined) {
+        window.location = 'index.html?art=' + currentAlphaRemovalThreshold + '&cu=' + currentCameraUpArray + "&cp=" + currentCameraPositionArray + "&cla=" + currentCameraLookAtArray + "&aa=" + currentAntialiased + "&2d=" + current2DScene + "&sh=" + currentSphericalHarmonicsDegree;
+      } else {
+        window.location = 'index.html';
+      }
+    });
+
+    function runViewer(splatBufferData, format, alphaRemovalThreshold, cameraUpArray, cameraPositionArray, cameraLookAtArray, antialiased, sceneIs2D, sphericalHarmonicsDegree) {
+      const viewerOptions = {
+        'cameraUp': cameraUpArray,
+        'initialCameraPosition': cameraPositionArray,
+        'initialCameraLookAt': cameraLookAtArray,
+        'halfPrecisionCovariancesOnGPU': false,
+        'antialiased': antialiased || false,
+        'splatRenderMode': sceneIs2D ? GaussianSplats3D.SplatRenderMode.TwoD : GaussianSplats3D.SplatRenderMode.ThreeD,
+        'sphericalHarmonicsDegree': sphericalHarmonicsDegree
+      };
+      const splatBufferOptions = {
+        'splatAlphaRemovalThreshold': alphaRemovalThreshold
+      };
+      const splatBufferPromise = fileBufferToSplatBuffer({data: splatBufferData}, format, alphaRemovalThreshold, 0,
+                                                          undefined, undefined, undefined, undefined, sphericalHarmonicsDegree);
+      splatBufferPromise.then((splatBuffer) => {
+        document.getElementById("demo-content").style.display = 'none';
+        document.body.style.backgroundColor = "#000000";
+        history.pushState("ViewSplat", null);
+        const viewer = new GaussianSplats3D.Viewer(viewerOptions);
+        viewer.addSplatBuffers([splatBuffer], [splatBufferOptions])
+        .then(() => {
+            viewer.start();
+        });
+      });
+    }
+
+  </script>
+  <script>
+    function openDemo(page, params) {
+      let url = page + '.html';
+      if (params && params.length > 0) {
+        let index = 0;
+        for (let param of params) {
+          url += (index === 0 ? "?" : "&");
+          url += param[0] + "=" + param[1];
+          index++;
+        }
+      }
+      window.location = url;
+    }
+    function reset() {
+      window.location = 'index.html';
+    }
+  </script>
+</head>
+
+
+<body>
+  <div id="demo-content" class="container">
+    <div class="panel">
+      <div class="title">
+        View a <span class="file-ext">.ply</span>, <span class="file-ext">.ksplat</span>, or <span class="file-ext">.splat</span> file
+      </div>
+      
+      <div class="file-input-container">
+        <div class="file-label">
+          <button class="button" onclick="document.getElementById('viewFile').click()">
+            Choose file
+          </button>
+          <span id="viewFileName" style="margin-left: 10px;">(No file chosen)</span>
+        </div>
+        <input type="file" id="viewFile" style="display:none" onchange="onFileChange(this, 'viewFileName')">
+      </div>
+
+      <div class="form-row">
+        <label for="alphaRemovalThresholdView">Minimum alpha:</label>
+        <div style="display: flex; align-items: center;">
+          <input id="alphaRemovalThresholdView" type="text" class="text-input" style="width: 50px" value="1">
+          <span class="valid-value-label">(1 - 255)</span>
+        </div>
+      </div>
+
+      <div class="checkbox-container">
+        <input type="checkbox" id="antialiased" class="checkbox-input">
+        <label for="antialiased">Anti-aliased</label>
+      </div>
+
+      <div class="checkbox-container">
+        <input type="checkbox" id="2dScene" class="checkbox-input">
+        <label for="2dScene">2D scene</label>
+      </div>
+
+      <div class="form-row">
+        <label for="cameraUp">Camera up:</label>
+        <input id="cameraUp" type="text" class="text-input" value="0, 1, 0">
+      </div>
+
+      <div class="form-row">
+        <label for="cameraPosition">Camera position:</label>
+        <input id="cameraPosition" type="text" class="text-input" value="0, 1, 0">
+      </div>
+
+      <div class="form-row">
+        <label for="cameraLookAt">Camera look-at:</label>
+        <input id="cameraLookAt" type="text" class="text-input" value="1, 0, 0">
+      </div>
+
+      <div class="form-row">
+        <label for="viewSphericalHarmonicsDegree">SH level:</label>
+        <div style="display: flex; align-items: center;">
+          <input id="viewSphericalHarmonicsDegree" type="text" class="text-input" style="width: 50px" value="0">
+          <span class="valid-value-label">(0, 1, or 2)</span>
+        </div>
+      </div>
+
+      <div style="display: flex; margin-top: 20px;">
+        <button class="button" onclick="viewSplat()">View</button>
+        <button class="button secondary" onclick="reset()">Reset</button>
+      </div>
+
+      <div style="position: relative; margin-top: 20px; text-align: center;">
+        <div id="view-loading-icon" class="loading-icon"></div>
+        <div id="viewStatus"></div>
+        <div id="viewError"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="title">Controls Reference</div>
+      
+      <div class="controls-section">
+        <div class="controls-subtitle">Mouse input</div>
+        <ul class="controls-list">
+          <li>Left click to set the focal point</li>
+          <li>Left click and drag to orbit</li>
+          <li>Right click and drag to pan</li>
+        </ul>
+      </div>
+      
+      <div class="controls-section">
+        <div class="controls-subtitle">Keyboard input</div>
+        <table class="controls-table">
+          <tr>
+            <td width="40"><div class="controls-key">I</div></td>
+            <td>Display debug info panel</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">C</div></td>
+            <td>Toggle mesh cursor</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">U</div></td>
+            <td>Toggle controls orientation marker</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">←</div></td>
+            <td>Rotate camera-up counter-clockwise</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">→</div></td>
+            <td>Rotate camera-up clockwise</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">P</div></td>
+            <td>Toggle point-cloud mode</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">O</div></td>
+            <td>Toggle orthographic mode</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">=</div></td>
+            <td>Increase splat scale</td>
+          </tr>
+          <tr>
+            <td><div class="controls-key">-</div></td>
+            <td>Decrease splat scale</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+   document.body.onload = function () {
+    if (window.location.search) {
+      const tokens = window.location.search.substring(1).split("&");
+      for (token of tokens) {
+        const component = token.split("=");
+        const varName = component[0];
+        if (varName == "art") {
+          currentAlphaRemovalThreshold = component[1];
+          document.getElementById('alphaRemovalThresholdView').value = currentAlphaRemovalThreshold;
+        } else if (varName == "cu") {
+          currentCameraUpArray = component[1];
+          document.getElementById('cameraUp').value = currentCameraUpArray;
+        } else if (varName == "cp") {
+          currentCameraPositionArray = component[1];
+          document.getElementById('cameraPosition').value = currentCameraPositionArray;
+        } else if (varName == "cla") {
+          currentCameraLookAtArray = component[1];
+          document.getElementById('cameraLookAt').value = currentCameraLookAtArray;
+        } else if (varName == "aa") {
+          currentAntialiased = component[1] === 'true' ? true : false;
+          document.getElementById('antialiased').checked = currentAntialiased;
+        } else if (varName == "2d") {
+          current2DScene = component[1] === 'true' ? true : false;
+          document.getElementById('2dScene').checked = current2DScene;
+        }  else if (varName == "sh") {
+          currentSphericalHarmonicsDegree = component[1];
+          document.getElementById('viewSphericalHarmonicsDegree').value = currentSphericalHarmonicsDegree;
+        }
+      }
+    }
+    if (history.state === "ViewSplat") {
+      history.go(-1);
+    }
+  };
+</script>
+</body>
+</html>

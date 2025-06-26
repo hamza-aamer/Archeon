@@ -1,0 +1,4 @@
+__pycache__
+viewer
+downloads/*
+firebase_config.json
