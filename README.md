@@ -312,7 +312,7 @@ The web viewer uses the Gaussian Splats 3D library (@mkkellogg/gaussian-splats-3
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under a customized Academic License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
