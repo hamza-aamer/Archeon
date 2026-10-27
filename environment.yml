@@ -1,0 +1,36 @@
+# Main Archeon environment: web server + 3D Gaussian Splatting + SuGaR.
+# Versions follow SuGaR's tested stack (Python 3.9, PyTorch 2.0.1, CUDA 11.8, PyTorch3D 0.7.4).
+# The CUDA extensions (diff-gaussian-rasterization, simple-knn, nvdiffrast) are built by scripts/setup.sh.
+name: archeon
+channels:
+  - pytorch3d
+  - pytorch
+  - nvidia/label/cuda-11.8.0
+  - nvidia
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.9
+  - pytorch=2.0.1
+  - torchvision=0.15.2
+  - pytorch-cuda=11.8
+  - pytorch3d=0.7.4
+  - mkl<2024.1                                # PyTorch 2.0.1 fails to load with newer MKL (iJIT_NotifyEvent)
+  - nvidia/label/cuda-11.8.0::cuda-toolkit   # nvcc + headers for building the CUDA extensions
+  - pip
+  - pip:
+      - numpy<2
+      - scipy<1.14
+      - plyfile==1.0.3
+      - open3d-cpu==0.17.0   # same API as open3d, a quarter of the download; SuGaR only uses CPU mesh ops
+      - pymcubes==0.1.4
+      - trimesh>=4.4,<5
+      - pillow<11
+      - rich
+      - tqdm
+      - ninja
+      - fastapi>=0.110,<0.116
+      - uvicorn[standard]>=0.29,<0.35
+      - python-multipart>=0.0.9
+      - pytest
+      - httpx

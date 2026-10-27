@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "archeon"
+version = "2.0.0"
+description = "Turn a walkthrough video into a Gaussian-splat scene and a SuGaR textured mesh, with a local web UI."
+readme = "README.md"
+requires-python = ">=3.9"
+# Dependencies (PyTorch, PyTorch3D, CUDA extensions, COLMAP) come from environment.yml and scripts/setup.sh.
+dependencies = []
+
+[project.scripts]
+archeon = "archeon.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["archeon*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: needs an NVIDIA GPU, COLMAP and the CUDA extensions (deselect with -m 'not gpu')"]

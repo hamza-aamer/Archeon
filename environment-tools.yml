@@ -1,0 +1,9 @@
+# External command-line tools used by the pipeline, kept in their own environment so that
+# COLMAP's CUDA 12 dependencies never fight with the CUDA 11.8 PyTorch stack in `archeon`.
+name: archeon-tools
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - colmap=4.2.1=cuda_129*
+  - ffmpeg

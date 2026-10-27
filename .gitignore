@@ -1,4 +1,28 @@
-__pycache__
-viewer
-downloads/*
+# Runtime state (uploaded videos, workspaces, trained scenes, sqlite db)
+data/
+
+# Local config and secrets
+.env
+secrets/
+creds*.json
 firebase_config.json
+
+# Legacy material kept locally but never committed
+/server/
+/server*.zip
+*:Zone.Identifier
+*:mshield
+/viewer/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

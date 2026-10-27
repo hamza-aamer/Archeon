@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07070d">
+  <title>Archeon</title>
+  <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/vendor/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/vendor/fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/static/vendor/three/three.module.min.js",
+        "three/addons/": "/static/vendor/three/addons/",
+        "gaussian-splats-3d": "/static/vendor/gaussian-splats-3d/gaussian-splats-3d.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="brand" aria-label="Archeon home"><img src="/static/assets/logo.png" alt="Archeon"></a>
+    <nav class="nav" id="nav">
+      <a href="#/" data-route="library"><span>Library</span></a>
+      <a href="#/queue" data-route="queue"><span>Queue</span><b class="nav-badge" id="queue-badge" hidden></b></a>
+      <a href="#/system" data-route="system"><span>System</span></a>
+      <a href="#/guide" data-route="guide"><span>Guide</span></a>
+    </nav>
+    <div class="topbar-right">
+      <a class="chip gpu-chip" id="gpu-chip" href="#/system" title="GPU"><span class="text">GPU</span><span class="meter"><span style="width:0"></span></span></a>
+      <a class="chip" id="health" href="#/system" title="Environment checks"><span class="dot"></span><span class="text">Checking</span></a>
+      <a class="button primary small" href="#/new" data-route="new" id="new-capture"></a>
+    </div>
+  </header>
+  <main id="app" class="page" aria-live="polite"></main>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>
