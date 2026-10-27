@@ -35,7 +35,7 @@ def _run_step(ctx: StageContext, step: str, parser=None) -> None:
 
 
 def run_coarse(ctx: StageContext) -> None:
-    _run_step(ctx, "coarse", fraction_parser(_ITERATION))
+    _run_step(ctx, "coarse", fraction_parser(_ITERATION, relative=True))
 
 
 def run_mesh(ctx: StageContext) -> None:
@@ -43,7 +43,7 @@ def run_mesh(ctx: StageContext) -> None:
 
 
 def run_refine(ctx: StageContext) -> None:
-    _run_step(ctx, "refine", fraction_parser(_ITERATION))
+    _run_step(ctx, "refine", fraction_parser(_ITERATION, relative=True))
 
 
 def run_texture(ctx: StageContext) -> None:

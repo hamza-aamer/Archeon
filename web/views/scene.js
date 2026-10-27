@@ -1,6 +1,6 @@
 import {
   ACTIVE, RETRYABLE, ago, api, bytes, compact, currentStage, duration, elapsed, esc, now, num, pct,
-  stageEta, statusPill, tween,
+  createEtaTracker, roughDuration, statusPill, tween,
 } from '../lib/util.js';
 import { STAGE_ICONS, icon } from '../lib/icons.js';
 import { confirmDialog, promptDialog, sparkline, toast } from '../lib/ui.js';
@@ -62,6 +62,7 @@ export async function renderScene(root, ctx, id) {
   let framesLoaded = false;
   let camerasMounted = false;
   let disposeMini = null;
+  const etaFor = createEtaTracker();
 
   root.innerHTML = `
     <a class="back" href="#/">${icon('back', 14)} Library</a>
@@ -251,8 +252,9 @@ export async function renderScene(root, ctx, id) {
       tween(pctEl, Math.round((scene.stage_progress || 0) * 100), asPct);
       body.querySelector('#stage-bar').style.width = pct(scene.stage_progress);
       body.querySelector('#stage-elapsed').textContent = scene.stage_started_at ? duration(now() - scene.stage_started_at) : '–';
-      const eta = stageEta(scene);
-      body.querySelector('#stage-eta').textContent = eta != null ? `≈ ${duration(eta)}` : scene.stage_progress > 0 ? 'estimating…' : 'not reported for this step';
+      const eta = etaFor(scene);
+      body.querySelector('#stage-eta').textContent = eta != null ? `about ${roughDuration(eta)}`
+        : scene.stage_progress > 0 ? 'calculating…' : 'not reported for this step';
     }
     const overall = body.querySelector('#overall');
     if (overall) {

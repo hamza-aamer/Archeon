@@ -1,10 +1,13 @@
 import {
-  ACTIVE, RETRYABLE, ago, api, currentStage, duration, elapsed, esc, now, pct, stageEta, statusPill,
+  ACTIVE, RETRYABLE, ago, api, createEtaTracker, currentStage, duration, elapsed, esc, now, pct, roughDuration,
+  statusPill,
 } from '../lib/util.js';
 import { STAGE_ICONS, icon } from '../lib/icons.js';
 import { confirmDialog, toast } from '../lib/ui.js';
 
 const FINAL = new Set(['done', 'failed', 'cancelled', 'interrupted']);
+
+const etaFor = createEtaTracker();
 
 function nowCard(scene, gpu) {
   if (!scene) {
@@ -20,7 +23,7 @@ function nowCard(scene, gpu) {
       </div>`;
   }
   const stage = currentStage(scene);
-  const eta = stageEta(scene);
+  const eta = etaFor(scene);
   const index = stage ? scene.stages.indexOf(stage) : -1;
   return `
     <a class="panel queue-now" href="#/scene/${scene.id}">
@@ -33,7 +36,7 @@ function nowCard(scene, gpu) {
           ${stage ? `<span class="icon-badge">${icon(STAGE_ICONS[stage.key], 16)}</span>
             <div><div class="eyebrow">Step ${index + 1} of ${scene.stages.length}</div><div style="font-weight:600;margin-top:4px">${esc(stage.label)}</div></div>` : '<div class="muted">Preparing…</div>'}
           <span class="spacer"></span>
-          <div style="text-align:right"><div class="big-num">${pct(scene.stage_progress)}</div><div class="faint" style="font-size:12px">${eta != null ? `≈ ${duration(eta)} left in step` : 'this step'}</div></div>
+          <div style="text-align:right"><div class="big-num">${pct(scene.stage_progress)}</div><div class="faint" style="font-size:12px">${eta != null ? `about ${roughDuration(eta)} left` : 'this step'}</div></div>
         </div>
         <div class="progress live" style="margin-top:14px"><span style="width:${pct(scene.stage_progress)}"></span></div>
         <div class="row" style="margin-top:14px;font-size:12.5px;color:var(--text-3)">

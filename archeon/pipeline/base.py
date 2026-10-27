@@ -205,9 +205,13 @@ def _terminate(proc: subprocess.Popen) -> None:
         pass
 
 
-def fraction_parser(pattern: str, total: int | None = None) -> ProgressParser:
-    """Build a parser from a regex with groups (done, total) or (done) with a fixed total."""
+def fraction_parser(pattern: str, total: int | None = None, relative: bool = False) -> ProgressParser:
+    """Build a parser from a regex with groups (done, total) or (done) with a fixed total.
+
+    With relative=True, progress is measured from the first value seen, for counters that resume
+    mid-way (SuGaR's coarse stage continues 3DGS's iteration count from 7000 to 15000)."""
     regex = re.compile(pattern)
+    start: list[float] = []
 
     def parse(line: str) -> float | None:
         match = regex.search(line)
@@ -215,6 +219,10 @@ def fraction_parser(pattern: str, total: int | None = None) -> ProgressParser:
             return None
         done = float(match.group(1))
         denominator = float(match.group(2)) if match.lastindex and match.lastindex >= 2 else float(total or 0)
+        if relative:
+            if not start:
+                start.append(done)
+            done, denominator = done - start[0], denominator - start[0]
         return done / denominator if denominator > 0 else None
 
     return parse

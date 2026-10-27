@@ -33,6 +33,9 @@ def test_fraction_parser_variants():
     assert sugar("nothing here") is None
     tqdm = fraction_parser(r"Training progress:\s*(\d+)%", total=100)
     assert tqdm("Training progress:  45%|####      | 3150/7000") == pytest.approx(0.45)
+    resumed = fraction_parser(r"\[\s*(\d+)/\s*(\d+)\]", relative=True)
+    assert resumed("loss: 0.03  [ 7000/15000]") == pytest.approx(0.0)
+    assert resumed("loss: 0.02  [11000/15000]") == pytest.approx(0.5)
 
 
 def test_run_streams_log_and_progress(ctx):

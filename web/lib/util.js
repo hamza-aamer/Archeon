@@ -75,13 +75,43 @@ export function elapsed(scene) {
   return times.reduce((a, b) => a + b, 0) + running;
 }
 
-/** Remaining time for the current stage, assuming progress keeps its average rate so far. */
-export function stageEta(scene) {
-  if (scene.status !== 'running' || !scene.stage_started_at) return null;
-  const spent = now() - scene.stage_started_at;
-  const p = scene.stage_progress || 0;
-  if (p < 0.03 || spent < 8 || p >= 1) return null;
-  return (spent * (1 - p)) / p;
+/**
+ * Remaining-time estimates from the *measured* recent rate of progress (sliding window), not from the
+ * stage's start time: some stages spend a while loading before reporting, and SuGaR resumes its iteration
+ * counter from where 3DGS stopped, so progress since stage start is not linear.
+ */
+export function createEtaTracker({ windowSeconds = 90, minSpan = 15 } = {}) {
+  let key = null;
+  let samples = [];
+  let smoothed = null;
+  return (scene) => {
+    if (scene.status !== 'running' || !scene.stage) return null;
+    const k = `${scene.id}:${scene.stage}`;
+    if (k !== key) {
+      key = k;
+      samples = [];
+      smoothed = null;
+    }
+    const t = now();
+    const p = scene.stage_progress || 0;
+    if (!samples.length || p !== samples[samples.length - 1].p) samples.push({ t, p });
+    samples = samples.filter((s) => t - s.t <= windowSeconds);
+    if (samples.length < 3 || p >= 1) return null;
+    const first = samples[0];
+    const span = t - first.t;
+    const progressed = p - first.p;
+    if (span < minSpan || progressed <= 0.002) return null;
+    const eta = ((1 - p) * span) / progressed;
+    smoothed = smoothed == null ? eta : smoothed * 0.7 + eta * 0.3;
+    return smoothed;
+  };
+}
+
+/** Round an estimate so it does not pretend to be more precise than it is. */
+export function roughDuration(seconds) {
+  if (seconds < 60) return 'under a minute';
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+  return `${Math.floor(seconds / 3600)} h ${Math.round((seconds % 3600) / 60)} min`;
 }
 
 export const STATUS_TEXT = {
